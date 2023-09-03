@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  password  String
+  name      String
+  phone     String   @unique
+  photo     String
+  dob       String
+  gender    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  posts    Posts[]
+  comments Comments[]
+  likes    PostLikes[]
+}
+
+model Posts {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  post      String      @db.VarChar(255)
+  noOfLikes Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+  user      Users       @relation(fields: [userId], references: [id])
+  comments  Comments[]
+  files     PostFiles[]
+  likes     PostLikes[]
+}
+
+model Comments {
+  id        Int      @id @default(autoincrement())
+  comment   String
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user Users @relation(fields: [userId], references: [id], onUpdate: Restrict, onDelete: Cascade)
+  post Posts @relation(fields: [postId], references: [id], onUpdate: Restrict, onDelete: Cascade)
+}
+
+model PostFiles {
+  id        Int      @id @default(autoincrement())
+  fileId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  file FileUploads @relation(fields: [fileId], references: [id], onUpdate: Restrict, onDelete: Cascade)
+  post Posts       @relation(fields: [postId], references: [id], onUpdate: Restrict, onDelete: Cascade)
+
+  @@unique([fileId, postId])
+}
+
+model PostLikes {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user Users @relation(fields: [userId], references: [id], onUpdate: Restrict)
+  post Posts @relation(fields: [postId], references: [id], onUpdate: Restrict)
+
+  @@unique([userId, postId])
+}
+
+model FileUploads {
+  id        Int          @id @default(autoincrement())
+  key       String       @db.VarChar(255)
+  fileName  String       @db.VarChar(255)
+  type      enumFileType @default(image)
+  url       String       @db.VarChar(255)
+  mimetype  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now()) @updatedAt
+  postFiles PostFiles[]
+}
+
+enum enumFileType {
+  audio
+  video
+  image
+  document
+  other
+}
